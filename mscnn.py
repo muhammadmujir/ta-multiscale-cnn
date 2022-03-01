@@ -3,13 +3,13 @@
 @Function: Structure of MSCNN crowd counting
 @Source: Multi-scale Convolution Neural Networks for Crowd Counting
          https://arxiv.org/abs/1702.02359
-@Data set: https://pan.baidu.com/s/12EqB1XDyFBB0kyinMA7Pqw 密码: sags  --> Have some problems
+@Data set: https://pan.baidu.com/s/12EqB1XDyFBB0kyinMA7Pqw Password: sags --> Have some problems
 
 @Author: Ling Bao
 @Code verification: Ling Bao
-@说明：
-    学习率：1e-4
-    平均loss : 14.
+@illustrate:
+    Learning rate: 1e-4
+    Average loss : 14.
 
 @Data: Sep. 11, 2017
 @Version: 0.1
@@ -34,20 +34,20 @@ data_train_im = 'Data_original/Data_im/train_im/'
 data_train_index = 'Data_original/dir_name.txt'
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer('batch_size', 1, """批次处理图片数目""")
-tf.app.flags.DEFINE_string('train_log', train_log, """训练日志""")
-tf.app.flags.DEFINE_string('model_dir', model, """模型保存""")
-tf.app.flags.DEFINE_string('output_dir', output, """输出中间结果""")
-tf.app.flags.DEFINE_boolean('log_device_placement', False, """是否记录设备布局""")
-tf.app.flags.DEFINE_string('data_train_gt', data_train_gt, """训练集标签""")
-tf.app.flags.DEFINE_string('data_train_im', data_train_im, """训练集图片""")
-tf.app.flags.DEFINE_string('data_train_index', data_train_index, """训练集图片""")
+tf.app.flags.DEFINE_integer('batch_size', 1, """Number of batched pictures""")
+tf.app.flags.DEFINE_string('train_log', train_log, """training log""")
+tf.app.flags.DEFINE_string('model_dir', model, """Model save""")
+tf.app.flags.DEFINE_string('output_dir', output, """Output intermediate results""")
+tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log the device layout""")
+tf.app.flags.DEFINE_string('data_train_gt', data_train_gt, """Training set label""")
+tf.app.flags.DEFINE_string('data_train_im', data_train_im, """Training set image""")
+tf.app.flags.DEFINE_string('data_train_index', data_train_index, """Training set image""")
 
 
 def _activation_summary(x):
     """
-    概要汇总函数
-    :param x: 待保存变量
+    Summary summary function
+    :param x: variable to save
     :return: None
     """
     tensor_name = re.sub('%s_[0-9]*/' % MP_NAME, '', x.op.name)
@@ -57,11 +57,11 @@ def _activation_summary(x):
 
 def _variable_on_cpu(name, shape, initializer):
     """
-    创建变量
+    create variable
     :param name: name_scope
-    :param shape: tensor维度
-    :param initializer: 初始化值
-    :return: tensor变量
+    :param shape: tensor dimension
+    :param initializer: initializer value
+    :return: tensor variable
     """
     with tf.device('/cpu:0'):
         var = tf.get_variable(name, shape, initializer=initializer)
@@ -71,14 +71,14 @@ def _variable_on_cpu(name, shape, initializer):
 
 def _variable_with_weight_decay(name, shape, stddev, wd):
     """
-    创建有权重衰减项的变量
+    Create a variable with a weight decay term
     :param name: name_scope
-    :param shape: tensor维度
-    :param stddev: 用于初始化的标准差
-    :param wd: 权重
-    :return: tensor变量
+    :param shape: tensor dimension
+    :param stddev: standard deviation for initialization
+    :param wd: weight
+    :return: tensor variable
     """
-    # wd 为衰减因子,若为None则无衰减项
+    # wd is the attenuation factor, if it is None, there is no attenuation term
     var = _variable_on_cpu(name, shape, tf.random_normal_initializer(stddev=stddev))
     if wd:
         weight_decay = tf.multiply(tf.nn.l2_loss(var), wd, name='weight_loss')
@@ -89,13 +89,13 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
 
 class BatchNorm(object):
     """
-    BN操作类
+    BN operation class
     """
     def __init__(self, epsilon=1e-5, momentum=0.9, name="batch_norm"):
         """
-        初始化函数
-        :param epsilon: 精度
-        :param momentum: 动量因子
+        initialization function
+        :param epsilon: precision
+        :param momentum: momentum factor
         :param name: name_scope
         """
         with tf.variable_scope(name):
@@ -105,8 +105,8 @@ class BatchNorm(object):
 
     def __call__(self, x):
         """
-        BN算子
-        :param x: 输入变量
+        BN operator
+        :param x: input variable
         :return:
         """
         return tf.contrib.layers.batch_norm(x, decay=self.momentum, updates_collections=None,
@@ -115,12 +115,12 @@ class BatchNorm(object):
 
 def multi_scale_block(in_con, in_dim, out_dim, is_bn=False):
     """
-    多尺度块MSB
-    :param in_con: 输入tensor变量 [batch_size, filter_w, filter_h, in_dim]
-    :param in_dim: 输入通道数
-    :param out_dim: 输出通道数
-    :param is_bn: 是否增加Batch Normal
-    :return: 输出tensor变量 [4 * batch_size, filter_w, filter_h, in_dim]
+    Multiscale Block MSB
+    :param in_con: input tensor variables [batch_size, filter_w, filter_h, in_dim]
+    :param in_dim: number of input channels
+    :param out_dim: number of output channels
+    :param is_bn: whether to add Batch Normal
+    :return: output tensor variable [4 * batch_size, filter_w, filter_h, in_dim]
     """
     with tf.variable_scope('con_9') as scope:
         kernel = _variable_with_weight_decay('weights', shape=[9, 9, in_dim, out_dim],
@@ -163,12 +163,12 @@ def multi_scale_block(in_con, in_dim, out_dim, is_bn=False):
 
 def inference(images):
     """
-    构建MSCNN模型
-    :param images: 原始图像
-    :return: 人群密度估计图像
+    Build the MSCNN model
+    :param images: original image
+    :return: crowd density estimation image
     """
     # -------------------------------------------------------------------------------------------- #
-    # 创建模型
+    # Create a model
     # con1_1
     with tf.variable_scope('con1') as scope:
         kernel = _variable_with_weight_decay('weights', shape=[9, 9, 3, 64],
@@ -228,7 +228,7 @@ def inference(images):
         con_out = tf.nn.relu(bias)
         _activation_summary(con_out)
 
-    # 删除第四维度channel, channel=1
+    # Delete the fourth dimension channel, channel=1
     image_out = con_out
 
     tf.summary.image("con_img", image_out)
@@ -238,7 +238,7 @@ def inference(images):
 
 def inference_bn(images):
     """
-    在MSCNN模型的cnn层后增加Batch Normal; 对输出的激活函数进行了改进f(x)=relu(sigmoid(x))
+    Added Batch Normal after the cnn layer of the MSCNN model; improved the output activation function f(x)=relu(sigmoid(x))
     $$sigmod(x)=\frac{1}{1+e^{-x}}$$
     $$relu(x)=
     \begin{equation}
@@ -249,11 +249,11 @@ def inference_bn(images):
     \end{equation}$$
     $$f(x)=relu(sigmod(x))$$
 
-    :param images: 原始图像
-    :return: 人群密度估计图像
+    :param images: original image
+    :return: crowd density estimation image
     """
     # -------------------------------------------------------------------------------------------- #
-    # 创建模型
+    # Create a model
     # con1_1
     with tf.variable_scope('con1') as scope:
         kernel = _variable_with_weight_decay('weights', shape=[9, 9, 3, 64],
@@ -316,7 +316,7 @@ def inference_bn(images):
         con_out = tf.nn.relu(tf.nn.sigmoid(bias))
         _activation_summary(con_out)
 
-    # 删除第四维度channel, channel=1
+    # remove the fourth dimension channel, channel=1
     image_out = con_out
 
     tf.summary.image("con_img", image_out)
@@ -326,8 +326,8 @@ def inference_bn(images):
 
 def loss(predict, label):
     """
-    计算损失
-    :param predict: mscnn估计密度图
+    Calculate the loss
+    :param predict: mscnn estimated density map
     :param label: ground truth crowd counting map
     :return: L2 loss
     """
@@ -335,7 +335,7 @@ def loss(predict, label):
     predict = tf.squeeze(predict, 3)
     l2_loss = tf.reduce_sum((predict - label) * (predict - label))
 
-    # 增加概要
+    # Add summary
     tf.summary.histogram('loss', l2_loss)
 
     return l2_loss
@@ -343,7 +343,7 @@ def loss(predict, label):
 
 def add_avg_loss(avg_loss):
     """
-    计算平均损失
+    Calculate the average loss
     :param avg_loss:
     :return:
     """
@@ -355,7 +355,7 @@ def add_avg_loss(avg_loss):
 
 def _add_loss_summaries(total_loss):
     """
-    增加损失概要信息
+    Add loss summary information
     :param total_loss:
     :return:
     """
@@ -372,11 +372,11 @@ def _add_loss_summaries(total_loss):
 
 def train(total_loss, global_step, nums_per_train):
     """
-    根据损失构建RMSProp优化算子
-    :param total_loss: 损失
+    Construct RMSProp optimization operator based on loss
+    :param total_loss: loss
     :param global_step:
     :param nums_per_train:
-    :return: RMSProp优化算子
+    :return: RMSProp optimization operator
     """
     num_batches_per_epoch = nums_per_train / FLAGS.batch_size
     decay_steps = int(num_batches_per_epoch * mscnn_train.num_epochs_per_decay)
@@ -388,15 +388,15 @@ def train(total_loss, global_step, nums_per_train):
                                     staircase=True)
     tf.summary.scalar('learning_rate', lr)
 
-    # 优化算法
+    # optimization
     opt = tf.train.RMSPropOptimizer(lr)
     grads = opt.compute_gradients(total_loss)
 
-    # 应用梯度
+    # apply gradient
     apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
     train_op = apply_gradient_op
 
-    # 添加概要
+    # Add summary
     for var in tf.trainable_variables():
         tf.summary.histogram(var.op.name, var)
 
